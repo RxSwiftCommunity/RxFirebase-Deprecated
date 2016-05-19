@@ -1,0 +1,35 @@
+{
+  "name": "RxFirebase",
+  "version": "0.1.0",
+  "summary": "RxSwift Helpers for the New Firebase Libraries",
+  "description": "This is a library to help you use RxSwift 2.5 or higher with Firebase 3.0 or higher.",
+  "homepage": "https://github.com/RxSwiftCommunity/RxFirebase",
+  "license": "MIT",
+  "authors": {
+    "Maximilian Alexander": "max@zinkpulse.com"
+  },
+  "source": {
+    "git": "https://github.com/RxSwiftCommunity/RxFirebase.git",
+    "tag": "0.1.0"
+  },
+  "social_media_url": "https://twitter.com/maxofeden",
+  "platforms": {
+    "ios": "8.0"
+  },
+  "source_files": "RxFirebase/Classes/**/*",
+  "xcconfig": {
+    "FRAMEWORK_SEARCH_PATHS": "\"$(PODS_ROOT)/Firebase\""
+  },
+  "frameworks": "UIKit",
+  "dependencies": {
+    "RxSwift": [
+      "~> 2.5"
+    ],
+    "Firebase/Database": [
+
+    ]
+  },
+  "vendored_frameworks": [
+    "${PODS_ROOT}/FirebaseDatabase/Frameworks/FirebaseDatabase.framework"
+  ]
+}
