@@ -17,9 +17,6 @@
     "ios": "8.0"
   },
   "source_files": "RxFirebase/Classes/**/*",
-  "xcconfig": {
-    "FRAMEWORK_SEARCH_PATHS": "\"$(PODS_ROOT)/Firebase\""
-  },
   "frameworks": "UIKit",
   "dependencies": {
     "RxSwift": [
@@ -27,7 +24,13 @@
     ],
     "Firebase/Database": [
 
+    ],
+    "Firebase/Auth": [
+
     ]
+  },
+  "xcconfig": {
+    "FRAMEWORK_SEARCH_PATHS": "'$(PODS_ROOT)/FirebaseDatabase'"
   },
   "vendored_frameworks": [
     "${PODS_ROOT}/FirebaseDatabase/Frameworks/FirebaseDatabase.framework"

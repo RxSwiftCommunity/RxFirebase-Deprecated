@@ -35,9 +35,10 @@ This is a library to help you use RxSwift 2.5 or higher with Firebase 3.0 or hig
     s.frameworks = 'UIKit'
     s.dependency 'RxSwift', '~> 2.5'
     s.dependency 'Firebase/Database'
+    s.dependency 'Firebase/Auth'
 
     s.xcconfig = {
-        "FRAMEWORK_SEARCH_PATHS": "'$(PODS_ROOT)/FirebaseDatabase'"
+        "FRAMEWORK_SEARCH_PATHS" => "'$(PODS_ROOT)/FirebaseDatabase'"
     }
     s.vendored_frameworks = ["${PODS_ROOT}/FirebaseDatabase/Frameworks/FirebaseDatabase.framework"]
 end
