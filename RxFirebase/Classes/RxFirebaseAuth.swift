@@ -36,14 +36,14 @@ public extension Firebase.Auth {
      @param email The user's email address.
      @param password The user's password.
     */
-    func rx_signinWithEmail(email: String, password: String) -> Observable<Firebase.User?> {
+    func rx_signinWithEmail(email: String, password: String) -> Observable<Firebase.User> {
         return Observable.create { observer in
             
             self.signIn(withEmail: email, password: password, completion: { (user, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext(user)
+                    observer.onNext(user!)
                     observer.onCompleted()
                 }
             })
@@ -55,13 +55,13 @@ public extension Firebase.Auth {
     /** 
         sign in anonymously
     */
-    func rx_signInAnonymously() -> Observable<Firebase.User?> {
+    func rx_signInAnonymously() -> Observable<Firebase.User> {
         return Observable.create { observer in
             self.signInAnonymously(completion: { (user, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext(user)
+                    observer.onNext(user!)
                     observer.onCompleted()
                 }
             })
@@ -74,13 +74,13 @@ public extension Firebase.Auth {
      Sign in with credential.
      @param credentials An instance of AuthCredential (Facebook, Twitter, Github, Google)
     */
-    func rx_signInWithCredentials(credentials: Firebase.AuthCredential) -> Observable<Firebase.User?> {
+    func rx_signInWithCredentials(credentials: Firebase.AuthCredential) -> Observable<Firebase.User> {
         return Observable.create { observer in
             Firebase.Auth.auth().signIn(with: credentials, completion: { (user, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext(user)
+                    observer.onNext(user!)
                     observer.onCompleted()
                 }
             })
@@ -93,13 +93,13 @@ public extension Firebase.Auth {
      Sign in with custom token.
      @param A custom token. Please see Firebase's documentation on how to set this up.
     */
-    func rx_signInWithCustomToken(token: String) -> Observable<Firebase.User?> {
+    func rx_signInWithCustomToken(token: String) -> Observable<Firebase.User> {
         return Observable.create { observer in
             self.signIn(withCustomToken: token, completion: { (user, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext(user)
+                    observer.onNext(user!)
                     observer.onCompleted()
                 }
             })
@@ -113,13 +113,13 @@ public extension Firebase.Auth {
      @param email The user's email address.
      @param password The user's desired password
     */
-    func rx_createUserWithEmail(email: String, password: String) -> Observable<Firebase.User?> {
+    func rx_createUserWithEmail(email: String, password: String) -> Observable<Firebase.User> {
         return Observable.create { observer in
             self.createUser(withEmail: email, password: password, completion: { (user, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext(user)
+                    observer.onNext(user!)
                     observer.onCompleted()
                 }
             })

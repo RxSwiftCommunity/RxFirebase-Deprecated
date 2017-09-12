@@ -20,13 +20,13 @@ public extension Firebase.User {
         }
     }
     
-    func rx_link(with credential: AuthCredential) -> Observable<Firebase.User?> {
+    func rx_link(with credential: AuthCredential) -> Observable<Firebase.User> {
         return Observable.create { observer in
             self.link(with: credential, completion: { user, error in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext(user)
+                    observer.onNext(user!)
                     observer.onCompleted()
                 }
             })
