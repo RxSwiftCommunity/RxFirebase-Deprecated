@@ -6,25 +6,26 @@
 //  Copyright (c) 2016 David Wong. All rights reserved.
 //
 
+import Firebase
 import FirebaseAnalytics
 import FirebaseAuth
 import RxSwift
 
-public extension FIRAuth {
+public extension Firebase.Auth {
     /**
      Registers for an "auth state did change" observable. Invoked when:
      - Registered as a listener
      - The current user changes, or,
      - The current user's access token changes.
      */
-    var rx_addAuthStateDidChangeListener: Observable<(FIRAuth, FIRUser?)> {
+    var rx_addAuthStateDidChangeListener: Observable<(Firebase.Auth, Firebase.User?)> {
         get {
             return Observable.create { observer in
-                let listener = self.addAuthStateDidChangeListener({ (auth, user) in
+                let listener = self.addStateDidChangeListener({ (auth, user) in
                     observer.onNext((auth, user))
                 })
-                return AnonymousDisposable {
-                    self.removeAuthStateDidChangeListener(listener)
+                return Disposables.create {
+                    self.removeStateDidChangeListener(listener)
                 }
             }
         }
@@ -35,56 +36,56 @@ public extension FIRAuth {
      @param email The user's email address.
      @param password The user's password.
     */
-    func rx_signinWithEmail(email: String, password: String) -> Observable<FIRUser?> {
+    func rx_signinWithEmail(email: String, password: String) -> Observable<Firebase.User> {
         return Observable.create { observer in
             
-            self.signInWithEmail(email, password: password, completion: { (user, error) in
+            self.signIn(withEmail: email, password: password, completion: { (user, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext(user)
+                    observer.onNext(user!)
                     observer.onCompleted()
                 }
             })
             
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     
     /** 
         sign in anonymously
     */
-    func rx_signInAnonymously() -> Observable<FIRUser?> {
+    func rx_signInAnonymously() -> Observable<Firebase.User> {
         return Observable.create { observer in
-            self.signInAnonymouslyWithCompletion({ (user, error) in
+            self.signInAnonymously(completion: { (user, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext(user)
+                    observer.onNext(user!)
                     observer.onCompleted()
                 }
             })
             
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     
     /**
      Sign in with credential.
-     @param credentials An instance of FIRAuthCredential (Facebook, Twitter, Github, Google)
+     @param credentials An instance of AuthCredential (Facebook, Twitter, Github, Google)
     */
-    func rx_signInWithCredentials(credentials: FIRAuthCredential) -> Observable<FIRUser?> {
+    func rx_signInWithCredentials(credentials: Firebase.AuthCredential) -> Observable<Firebase.User> {
         return Observable.create { observer in
-            FIRAuth.auth()?.signInWithCredential(credentials, completion: { (user, error) in
+            Firebase.Auth.auth().signIn(with: credentials, completion: { (user, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext(user)
+                    observer.onNext(user!)
                     observer.onCompleted()
                 }
             })
             
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     
@@ -92,18 +93,18 @@ public extension FIRAuth {
      Sign in with custom token.
      @param A custom token. Please see Firebase's documentation on how to set this up.
     */
-    func rx_signInWithCustomToken(token: String) -> Observable<FIRUser?> {
+    func rx_signInWithCustomToken(token: String) -> Observable<Firebase.User> {
         return Observable.create { observer in
-            self.signInWithCustomToken(token, completion: { (user, error) in
+            self.signIn(withCustomToken: token, completion: { (user, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext(user)
+                    observer.onNext(user!)
                     observer.onCompleted()
                 }
             })
             
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     
@@ -112,18 +113,18 @@ public extension FIRAuth {
      @param email The user's email address.
      @param password The user's desired password
     */
-    func rx_createUserWithEmail(email: String, password: String) -> Observable<FIRUser?> {
+    func rx_createUserWithEmail(email: String, password: String) -> Observable<Firebase.User> {
         return Observable.create { observer in
-            self.createUserWithEmail(email, password: password, completion: { (user, error) in
+            self.createUser(withEmail: email, password: password, completion: { (user, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext(user)
+                    observer.onNext(user!)
                     observer.onCompleted()
                 }
             })
             
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     

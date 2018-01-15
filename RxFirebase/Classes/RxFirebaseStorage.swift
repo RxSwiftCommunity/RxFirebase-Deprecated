@@ -6,10 +6,11 @@
 //
 //
 
+import Firebase
 import FirebaseStorage
 import RxSwift
 
-public extension FIRStorageReference {
+public extension FirebaseStorage.StorageReference {
     // MARK: UPLOAD
     
     /**
@@ -17,13 +18,13 @@ public extension FIRStorageReference {
      This is not recommended for large files, and one should instead upload a file from disk.
      
      @param uploadData The NSData to upload.
-     @param metadata FIRStorageMetaData containing additional information (MIME type, etc.) about the object being uploaded.
+     @param metadata FirebaseStorage.StorageMetadata containing additional information (MIME type, etc.) about the object being uploaded.
      
     */
-    func rx_putData(data: NSData, metaData: FIRStorageMetadata? = nil) -> Observable<FIRStorageUploadTask> {
+    func rx_putData(data: NSData, metaData: FirebaseStorage.StorageMetadata? = nil) -> Observable<FirebaseStorage.StorageUploadTask> {
         return Observable.create { observer in
-            observer.onNext(self.putData(data, metadata: metaData, completion: { (metadata, error) in }))
-            return NopDisposable.instance
+            observer.onNext(self.putData(data as Data, metadata: metaData, completion: { (metadata, error) in }))
+            return Disposables.create()
         }
     }
     
@@ -33,23 +34,23 @@ public extension FIRStorageReference {
      This method will output upload progress and success or failure states.
      
      @param uploadData The NSData to upload.
-     @param metadata FIRStorageMetaData containing additional information (MIME type, etc.) about the object being uploaded.
+     @param metadata FirebaseStorage.StorageMetadata containing additional information (MIME type, etc.) about the object being uploaded.
     */
-    func rx_putDataWithProgress(data: NSData, metaData: FIRStorageMetadata? = nil) -> Observable<(FIRStorageTaskSnapshot, FIRStorageTaskStatus)> {
-        return rx_putData(data, metaData: metaData).rx_storageStatus()
+    func rx_putDataWithProgress(data: NSData, metaData: FirebaseStorage.StorageMetadata? = nil) -> Observable<(FirebaseStorage.StorageTaskSnapshot, FirebaseStorage.StorageTaskStatus)> {
+        return rx_putData(data: data, metaData: metaData).rx_storageStatus()
     }
     
     /**
      Asynchronously uploads a file to the currently specified FIRStorageReference.
      
      @param fileURL A URL representing the system file path of the object to be uploaded.
-     @param metadata FIRStorageMetadata containing additional information (MIME type, etc.) about the object being uploaded.
+     @param metadata FirebaseStorage.StorageMetadata containing additional information (MIME type, etc.) about the object being uploaded.
     */
-    func rx_putFile(path: NSURL, metadata: FIRStorageMetadata? = nil) -> Observable<FIRStorageUploadTask> {
+    func rx_putFile(path: NSURL, metadata: FirebaseStorage.StorageMetadata? = nil) -> Observable<FirebaseStorage.StorageUploadTask> {
         return Observable.create { observer in
-            let uploadTask = self.putFile(path, metadata: metadata, completion: { (metadata, error) in })
+            let uploadTask = self.putFile(from: path as URL, metadata: metadata, completion: { (metadata, error) in })
             observer.onNext(uploadTask)
-            return AnonymousDisposable {
+            return Disposables.create {
                 uploadTask.cancel()
             }
         }
@@ -60,10 +61,10 @@ public extension FIRStorageReference {
      This method will output upload progress and success or failure states.
      
      @param fileURL A URL representing the system file path of the object to be uploaded.
-     @param metadata FIRStorageMetadata containing additional information (MIME type, etc.) about the object being uploaded.
+     @param metadata FirebaseStorage.StorageMetadata containing additional information (MIME type, etc.) about the object being uploaded.
      */
-    func rx_putFileWithProgress(path: NSURL, metaData: FIRStorageMetadata? = nil) -> Observable<(FIRStorageTaskSnapshot, FIRStorageTaskStatus)> {
-        return rx_putFile(path).rx_storageStatus()
+    func rx_putFileWithProgress(path: NSURL, metaData: FirebaseStorage.StorageMetadata? = nil) -> Observable<(FirebaseStorage.StorageTaskSnapshot, FirebaseStorage.StorageTaskStatus)> {
+        return rx_putFile(path: path).rx_storageStatus()
     }
     
     // MARK: DOWNLOAD
@@ -77,15 +78,15 @@ public extension FIRStorageReference {
     */
     func rx_dataWithMaxSize(size: Int64) -> Observable<NSData?> {
         return Observable.create { observer in
-            let download = self.dataWithMaxSize(size, completion: { (data, error) in
+            let download = self.getData(maxSize: size, completion: { (data, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext(data)
+                    observer.onNext(data! as NSData)
                     observer.onCompleted()
                 }
             })
-            return AnonymousDisposable {
+            return Disposables.create {
                 download.cancel()
             }
         }
@@ -99,26 +100,26 @@ public extension FIRStorageReference {
      
      @param size The maximum size in bytes to download.  If the download exceeds this size the task will be cancelled and an error will be returned.
      */
-    func rx_dataWithMaxSizeProgress(size: Int64) -> Observable<(NSData?, FIRStorageTaskSnapshot?, FIRStorageTaskStatus?)> {
+    func rx_dataWithMaxSizeProgress(size: Int64) -> Observable<(NSData?, FirebaseStorage.StorageTaskSnapshot?, FirebaseStorage.StorageTaskStatus?)> {
         return Observable.create { observer in
-            let download = self.dataWithMaxSize(size, completion: { (data, error) in
+            let download = self.getData(maxSize: size, completion: { (data, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext((data, nil, .Success))
+                    observer.onNext((data! as NSData, nil, .success))
                     observer.onCompleted()
                 }
             })
             
-            download.observeStatus(.Progress, handler: { (snapshot: FIRStorageTaskSnapshot) in
+            download.observe(.progress, handler: { (snapshot: FirebaseStorage.StorageTaskSnapshot) in
                 if let error = snapshot.error {
                     observer.onError(error)
                 } else {
-                    observer.onNext((nil, snapshot, .Progress))
+                    observer.onNext((nil, snapshot, .progress))
                 }
             })
             
-            return AnonymousDisposable {
+            return Disposables.create {
                 download.cancel()
             }
         }
@@ -131,15 +132,15 @@ public extension FIRStorageReference {
     */
     func rx_writeToFile(localURL: NSURL) -> Observable<NSURL?> {
         return Observable.create { observer in
-            let download = self.writeToFile(localURL, completion: { (url, error) in
+            let download = self.write(toFile: localURL as URL, completion: { (url, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext(url)
+                    observer.onNext(url! as NSURL)
                     observer.onCompleted()
                 }
             })
-            return AnonymousDisposable {
+            return Disposables.create {
                 download.cancel()
             }
         }
@@ -152,26 +153,26 @@ public extension FIRStorageReference {
      
      @param fileURL A file system URL representing the path the object should be downloaded to.
      */
-    func rx_writeToFileWithProgress(localURL: NSURL) -> Observable<(NSURL?, FIRStorageTaskSnapshot?, FIRStorageTaskStatus?)> {
+    func rx_writeToFileWithProgress(localURL: NSURL) -> Observable<(NSURL?, FirebaseStorage.StorageTaskSnapshot?, FirebaseStorage.StorageTaskStatus?)> {
         return Observable.create { observer in
-            let download = self.writeToFile(localURL, completion: { (url, error) in
+            let download = self.write(toFile: localURL as URL, completion: { (url, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
-                    observer.onNext((url, nil, .Success))
+                    observer.onNext((url! as NSURL, nil, .success))
                     observer.onCompleted()
                 }
             })
             
-            download.observeStatus(.Progress, handler: { (snapshot: FIRStorageTaskSnapshot) in
+            download.observe(.progress, handler: { (snapshot: FirebaseStorage.StorageTaskSnapshot) in
                 if let error = snapshot.error {
                     observer.onError(error)
                 } else {
-                    observer.onNext((nil, snapshot, .Progress))
+                    observer.onNext((nil, snapshot, .progress))
                 }
             })
             
-            return AnonymousDisposable {
+            return Disposables.create {
                 download.cancel()
             }
         }
@@ -184,15 +185,15 @@ public extension FIRStorageReference {
     */
     func rx_downloadURL() -> Observable<NSURL?> {
         return Observable.create { observable in
-            self.downloadURLWithCompletion({ (url, error) in
+            self.downloadURL(completion: { (url, error) in
                 if let error = error {
                     observable.onError(error)
                 } else {
-                    observable.onNext(url)
+                    observable.onNext(url! as NSURL)
                     observable.onCompleted()
                 }
             })
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     
@@ -202,7 +203,7 @@ public extension FIRStorageReference {
     */
     func rx_delete() -> Observable<Void> {
         return Observable.create { observable in
-            self.deleteWithCompletion({ error in
+            self.delete(completion: { error in
                 if let error = error {
                     observable.onError(error)
                 } else {
@@ -210,7 +211,7 @@ public extension FIRStorageReference {
                     observable.onCompleted()
                 }
             })
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     
@@ -218,9 +219,9 @@ public extension FIRStorageReference {
     /**
      Retrieves metadata associated with an object at the current path.
     */
-    func rx_metadata() -> Observable<FIRStorageMetadata?> {
+    func rx_metadata() -> Observable<FirebaseStorage.StorageMetadata?> {
         return Observable.create { observer in
-            self.metadataWithCompletion({ (metadata, error) in
+            self.getMetadata(completion: { (metadata, error) in
                 if let error = error {
                     observer.onError(error)
                 } else {
@@ -228,16 +229,16 @@ public extension FIRStorageReference {
                     observer.onCompleted()
                 }
             })
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     
     /**
      Updates the metadata associated with an object at the current path.
      
-     @param metadata An FIRStorageMetadata object with the metadata to update.
+     @param metadata An FirebaseStorage.StorageMetadata object with the metadata to update.
     */
-    func rx_updateMetadata(metadata: FIRStorageMetadata) -> Observable<FIRStorageMetadata?> {
+    func rx_updateMetadata(metadata: FirebaseStorage.StorageMetadata) -> Observable<FirebaseStorage.StorageMetadata?> {
         return Observable.create { observer in
             self.updateMetadata(metadata, completion: { (metadata, error) in
                 if let error = error {
@@ -247,58 +248,58 @@ public extension FIRStorageReference {
                     observer.onCompleted()
                 }
             })
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     
 }
 
-extension FIRStorageUploadTask {
-    func rx_observeStatus(status: FIRStorageTaskStatus) -> Observable<(FIRStorageTaskSnapshot, FIRStorageTaskStatus)> {
+extension FirebaseStorage.StorageUploadTask {
+    func rx_observeStatus(status: FirebaseStorage.StorageTaskStatus) -> Observable<(FirebaseStorage.StorageTaskSnapshot, FirebaseStorage.StorageTaskStatus)> {
         return Observable.create { observer in
-            let observeStatus = self.observeStatus(status, handler: { (snapshot: FIRStorageTaskSnapshot) in
+            let observeStatus = self.observe(status, handler: { (snapshot: FirebaseStorage.StorageTaskSnapshot) in
                 if let error = snapshot.error {
                     observer.onError(error)
                 } else {
                     observer.onNext((snapshot, status))
-                    if status == .Success {
+                    if status == .success {
                         observer.onCompleted()
                     }
                 }
             })
-            return AnonymousDisposable {
-                self.removeObserverWithHandle(observeStatus)
+            return Disposables.create {
+                self.removeObserver(withHandle: observeStatus)
             }
         }
     }
 }
 
-extension FIRStorageDownloadTask {
-    func rx_observeStatus(status: FIRStorageTaskStatus) -> Observable<(FIRStorageTaskSnapshot, FIRStorageTaskStatus)> {
+extension FirebaseStorage.StorageDownloadTask {
+    func rx_observeStatus(status: FirebaseStorage.StorageTaskStatus) -> Observable<(FirebaseStorage.StorageTaskSnapshot, FirebaseStorage.StorageTaskStatus)> {
         return Observable.create { observer in
-            let observeStatus = self.observeStatus(status, handler: { snapshot in
+            let observeStatus = self.observe(status, handler: { snapshot in
                 if let error = snapshot.error {
                     observer.onError(error)
                 } else {
                     observer.onNext((snapshot, status))
-                    if status == .Success {
+                    if status == .success {
                         observer.onCompleted()
                     }
                 }
             })
-            return AnonymousDisposable {
-                self.removeObserverWithHandle(observeStatus)
+            return Disposables.create {
+                self.removeObserver(withHandle: observeStatus)
             }
         }
     }
 }
 
-extension ObservableType where E : FIRStorageUploadTask {
-    func rx_storageStatus() -> Observable<(FIRStorageTaskSnapshot, FIRStorageTaskStatus)> {
-        return self.flatMap { (uploadTask: FIRStorageUploadTask) -> Observable<(FIRStorageTaskSnapshot, FIRStorageTaskStatus)> in
-            let progressStatus = uploadTask.rx_observeStatus(.Progress)
-            let successStatus = uploadTask.rx_observeStatus(.Success)
-            let failureStatus = uploadTask.rx_observeStatus(.Failure)
+extension ObservableType where E : FirebaseStorage.StorageUploadTask {
+    func rx_storageStatus() -> Observable<(FirebaseStorage.StorageTaskSnapshot, FirebaseStorage.StorageTaskStatus)> {
+        return self.flatMap { (uploadTask: FirebaseStorage.StorageUploadTask) -> Observable<(FirebaseStorage.StorageTaskSnapshot, FirebaseStorage.StorageTaskStatus)> in
+            let progressStatus = uploadTask.rx_observeStatus(status: .progress)
+            let successStatus = uploadTask.rx_observeStatus(status: .puccess)
+            let failureStatus = uploadTask.rx_observeStatus(status: .failure)
             
             let merged = Observable.of(progressStatus, successStatus, failureStatus).merge()
             return merged
@@ -306,12 +307,12 @@ extension ObservableType where E : FIRStorageUploadTask {
     }
 }
 
-extension ObservableType where E : FIRStorageDownloadTask {
-    func rx_storageStatus() -> Observable<(FIRStorageTaskSnapshot, FIRStorageTaskStatus)> {
-        return self.flatMap { (downloadTask: FIRStorageDownloadTask) -> Observable<(FIRStorageTaskSnapshot, FIRStorageTaskStatus)> in
-            let progressStatus = downloadTask.rx_observeStatus(.Progress)
-            let successStatus = downloadTask.rx_observeStatus(.Success)
-            let failureStatus = downloadTask.rx_observeStatus(.Failure)
+extension ObservableType where E : FirebaseStorage.StorageDownloadTask {
+    func rx_storageStatus() -> Observable<(FirebaseStorage.StorageTaskSnapshot, FirebaseStorage.StorageTaskStatus)> {
+        return self.flatMap { (downloadTask: FirebaseStorage.StorageDownloadTask) -> Observable<(FirebaseStorage.StorageTaskSnapshot, FirebaseStorage.StorageTaskStatus)> in
+            let progressStatus = downloadTask.rx_observeStatus(status: .progress)
+            let successStatus = downloadTask.rx_observeStatus(status: .success)
+            let failureStatus = downloadTask.rx_observeStatus(status: .failure)
             
             let merged = Observable.of(progressStatus, successStatus, failureStatus).merge()
             return merged

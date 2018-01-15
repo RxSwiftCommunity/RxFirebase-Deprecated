@@ -6,10 +6,11 @@
 //
 //
 
+import Firebase
 import FirebaseDatabase
 import RxSwift
 
-public extension FIRDatabaseQuery {
+public extension Firebase.DatabaseQuery {
     /**
      Listen for data changes at a particular location.
      This is the primary way to read data from the Firebase Database. The observers 
@@ -17,13 +18,13 @@ public extension FIRDatabaseQuery {
      
      @param eventType The type of event to listen for.
     */
-    func rx_observe(eventType: FIRDataEventType) -> Observable<FIRDataSnapshot> {
+    func rx_observe(eventType: Firebase.DataEventType) -> Observable<Firebase.DataSnapshot> {
         return Observable.create { observer in
-            let handle = self.observeEventType(eventType) { (snapshot) in
+            let handle = self.observe(eventType) { (snapshot) in
                 observer.onNext(snapshot)
             }
-            return AnonymousDisposable {
-                self.removeObserverWithHandle(handle)
+            return Disposables.create {
+                self.removeObserver(withHandle: handle)
             }
         }
     }
@@ -36,13 +37,13 @@ public extension FIRDatabaseQuery {
      
      @param eventType The type of event to listen for.
     */
-    func rx_observeWithSiblingKey(eventType: FIRDataEventType) -> Observable<(FIRDataSnapshot, String?)> {
+    func rx_observeWithSiblingKey(eventType: Firebase.DataEventType) -> Observable<(Firebase.DataSnapshot, String?)> {
         return Observable.create { observer in
-            let handle = self.observeEventType(eventType, andPreviousSiblingKeyWithBlock: { (snapshot, siblingKey) in
+            let handle = self.observe(eventType, andPreviousSiblingKeyWith: { (snapshot, siblingKey) in
                 observer.onNext((snapshot, siblingKey))
             })
-            return AnonymousDisposable {
-                self.removeObserverWithHandle(handle)
+            return Disposables.create {
+                self.removeObserver(withHandle: handle)
             }
         }
     }
@@ -52,14 +53,14 @@ public extension FIRDatabaseQuery {
      
      @param eventType The type of event to listen for.
     */
-    func rx_observeSingleEventOfType(eventType: FIRDataEventType) -> Observable<FIRDataSnapshot> {
+    func rx_observeSingleEventOfType(eventType: Firebase.DataEventType) -> Observable<Firebase.DataSnapshot> {
         return Observable.create { observer in
-            self.observeSingleEventOfType(eventType, withBlock: { (snapshot) in
+            self.observeSingleEvent(of: eventType, with: { (snapshot) in
                 observer.onNext(snapshot)
                 observer.onCompleted()
             })
             
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     
@@ -69,25 +70,25 @@ public extension FIRDatabaseQuery {
      
      @param eventType The type of event to listen for.
     */
-    func rx_observeSingleEventOfTypeWithSiblingKey(eventType: FIRDataEventType) -> Observable<(FIRDataSnapshot, String?)> {
+    func rx_observeSingleEventOfTypeWithSiblingKey(eventType: Firebase.DataEventType) -> Observable<(Firebase.DataSnapshot, String?)> {
         return Observable.create { observer in
-            self.observeSingleEventOfType(eventType, andPreviousSiblingKeyWithBlock: { (snapshot, string) in
+            self.observeSingleEvent(of: eventType, andPreviousSiblingKeyWith: { (snapshot, string) in
                 observer.onNext((snapshot, string))
                 observer.onCompleted()
             })
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
 }
 
-public extension FIRDatabaseReference {
+public extension Firebase.DatabaseReference {
     /**
      Update changes the values at the specified paths in the dictionary without 
      overwriting other keys at this location
      
      @param values A dictionary of keys to change and their new values
     */
-    func rx_updateChildValues(values: [String : AnyObject]) -> Observable<FIRDatabaseReference> {
+    func rx_updateChildValues(values: [String : AnyObject]) -> Observable<Firebase.DatabaseReference> {
         return Observable.create { observer in
             self.updateChildValues(values, withCompletionBlock: { (error, databaseReference) in
                 if let error = error {
@@ -99,7 +100,7 @@ public extension FIRDatabaseReference {
                 }
             })
             
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     
@@ -128,7 +129,7 @@ public extension FIRDatabaseReference {
      @param value The value to be written
      @param priority The Priority to be attached to the data.
     */
-    func rx_setValue(value: AnyObject!, priority: AnyObject? = nil) -> Observable<FIRDatabaseReference> {
+    func rx_setValue(value: AnyObject!, priority: AnyObject? = nil) -> Observable<Firebase.DatabaseReference> {
         return Observable.create { observer in
             self.setValue(value, andPriority: priority, withCompletionBlock: { (error, databaseReference) in
                 if let error = error {
@@ -138,7 +139,7 @@ public extension FIRDatabaseReference {
                     observer.onCompleted()
                 }
             })
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     
@@ -149,9 +150,9 @@ public extension FIRDatabaseReference {
      will be triggered. Synchronization of the delete to the Firebase Database servers will 
      also be started.
     */
-    func rx_removeValue() -> Observable<FIRDatabaseReference> {
+    func rx_removeValue() -> Observable<Firebase.DatabaseReference> {
         return Observable.create { observer in
-            self.removeValueWithCompletionBlock({ (error, databaseReference) in
+            self.removeValue(completionBlock: { (error, databaseReference) in
                 if let error = error {
                     observer.onError(error)
                 } else {
@@ -159,7 +160,7 @@ public extension FIRDatabaseReference {
                     observer.onCompleted()
                 }
             })
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     /**
@@ -173,7 +174,7 @@ public extension FIRDatabaseReference {
      
      @param block This block receives the current data at this location and must return an instance of FIRTransactionResult
     */
-    func rx_runTransactionBlock(block: ((FIRMutableData!) -> FIRTransactionResult)!) -> Observable<(isCommitted: Bool, snapshot: FIRDataSnapshot?)> {
+    func rx_runTransactionBlock(block: ((Firebase.MutableData?) -> Firebase.TransactionResult)!) -> Observable<(isCommitted: Bool, snapshot: Firebase.DataSnapshot?)> {
         return Observable.create { observer in
             self.runTransactionBlock(block, andCompletionBlock: { (error, isCommitted, snapshot) in
                 if let error = error {
@@ -183,7 +184,7 @@ public extension FIRDatabaseReference {
                     observer.onCompleted()
                 }
             })
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     
@@ -210,7 +211,7 @@ public extension FIRDatabaseReference {
      
      @param priority The priority to set at the specified location.
      */
-    func rx_setPriority(priority : AnyObject) -> Observable<FIRDatabaseReference> {
+    func rx_setPriority(priority : AnyObject) -> Observable<Firebase.DatabaseReference> {
         return Observable.create { observer in
             self.setPriority(priority, withCompletionBlock: { (error, databaseReference) in
                 if let error = error {
@@ -220,7 +221,7 @@ public extension FIRDatabaseReference {
                     observer.onCompleted()
                 }
             })
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     
@@ -236,7 +237,7 @@ public extension FIRDatabaseReference {
      @param value The value to be set after the connection is lost.
      @param priority The priority to be set after the connection is lost.
     */
-    func rx_onDisconnectSetValue(value: AnyObject, priority: AnyObject? = nil) -> Observable<FIRDatabaseReference> {
+    func rx_onDisconnectSetValue(value: AnyObject, priority: AnyObject? = nil) -> Observable<Firebase.DatabaseReference> {
         return Observable.create { observer in
             self.onDisconnectSetValue(value, andPriority: priority, withCompletionBlock: { (error, databaseReference) in
                 if let error = error {
@@ -246,7 +247,7 @@ public extension FIRDatabaseReference {
                     observer.onCompleted()
                 }
             })
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     
@@ -257,7 +258,7 @@ public extension FIRDatabaseReference {
      
      @param values A dictionary of child node keys and the values to set them to after the connection is lost.
     */
-    func rx_onDisconnectUpdateChildValue(values: [String : AnyObject]) -> Observable<FIRDatabaseReference> {
+    func rx_onDisconnectUpdateChildValue(values: [String : AnyObject]) -> Observable<Firebase.DatabaseReference> {
         return Observable.create { observer in
             self.onDisconnectUpdateChildValues(values, withCompletionBlock: { (error, databaseReference) in
                 if let error = error {
@@ -267,7 +268,7 @@ public extension FIRDatabaseReference {
                     observer.onCompleted()
                 }
             })
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
     /**
@@ -277,9 +278,9 @@ public extension FIRDatabaseReference {
      
      rx_onDisconnectRemoveValue() is especially useful for implementing "presence systems.
     */
-    func rx_onDisconnectRemoveValue() -> Observable<FIRDatabaseReference> {
+    func rx_onDisconnectRemoveValue() -> Observable<Firebase.DatabaseReference> {
         return Observable.create { observer in
-            self.onDisconnectRemoveValueWithCompletionBlock({ (error, databaseReference) in
+            self.onDisconnectRemoveValue(completionBlock: { (error, databaseReference) in
                 if let error = error {
                     observer.onError(error)
                 } else {
@@ -287,13 +288,13 @@ public extension FIRDatabaseReference {
                     observer.onCompleted()
                 }
             })
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
 }
 
 
-public extension ObservableType where E : FIRDataSnapshot {
+public extension ObservableType where E : Firebase.DataSnapshot {
     
     func rx_filterWhenNSNull() -> Observable<E> {
         return self.filter { (snapshot) -> Bool in
@@ -307,31 +308,31 @@ public extension ObservableType where E : FIRDataSnapshot {
         }
     }
     
-    func rx_children() -> Observable<FIRDataSnapshot> {
-        return self.flatMap({ (snapshot) -> Observable<FIRDataSnapshot> in
+    func rx_children() -> Observable<DataSnapshot> {
+        return self.flatMap({ (snapshot) -> Observable<Firebase.DataSnapshot> in
             return Observable.create { observer in
                 
                 for snapChild in snapshot.children {
-                    if let snapChild = snapChild as? FIRDataSnapshot {
+                    if let snapChild = snapChild as? Firebase.DataSnapshot {
                         observer.onNext(snapChild)
                     }
                 }
                 observer.onCompleted()
                 
-                return NopDisposable.instance
+                return Disposables.create()
             }
         })
     }
     
-    func rx_childrenAsArray() -> Observable<[FIRDataSnapshot]> {
-        return self.flatMap({ (snapshot) -> Observable<[FIRDataSnapshot]> in
+    func rx_childrenAsArray() -> Observable<[Firebase.DataSnapshot]> {
+        return self.flatMap({ (snapshot) -> Observable<[Firebase.DataSnapshot]> in
             return Observable.create { observer in
-                if let array = snapshot.children.allObjects as? [FIRDataSnapshot] {
+                if let array = snapshot.children.allObjects as? [Firebase.DataSnapshot] {
                     observer.onNext(array)
                 }
                 observer.onCompleted()
                 
-                return NopDisposable.instance
+                return Disposables.create()
             }
         })
     }

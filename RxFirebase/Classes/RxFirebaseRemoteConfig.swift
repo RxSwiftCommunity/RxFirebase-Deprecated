@@ -6,20 +6,21 @@
 //
 //
 
+import Firebase
 import FirebaseRemoteConfig
 import RxSwift
 
-public extension FIRRemoteConfig {
+public extension FirebaseRemoteConfig.RemoteConfig {
     /**
      Fetches Remote Config data and sets a duration that specifies how long config data lasts.
      
      @param expirationDuration  Duration that defines how long fetched config data is available, in seconds. When the config data expires, a new fetch is required.
      
     */
-    func rx_fetchWithExpirationDuration(expirationDuration: NSTimeInterval) -> Observable<FIRRemoteConfig> {
+    func rx_fetchWithExpirationDuration(expirationDuration: TimeInterval) -> Observable<FirebaseRemoteConfig.RemoteConfig> {
         return Observable.create { observer in
-            self.fetchWithExpirationDuration(expirationDuration) { (status, error) -> Void in
-                if (status == FIRRemoteConfigFetchStatus.Success) {
+            self.fetch(withExpirationDuration: expirationDuration) { (status, error) -> Void in
+                if (status == RemoteConfigFetchStatus.success) {
                     self.activateFetched()
                     observer.onNext(self)
                     observer.onCompleted()
@@ -28,7 +29,7 @@ public extension FIRRemoteConfig {
                 }
             }
             
-            return NopDisposable.instance
+            return Disposables.create()
         }
     }
 }
